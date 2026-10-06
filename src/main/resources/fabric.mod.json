@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "improved-default-discord-rpc",
+  "version": "${version}",
+  "name": "Improved Default Discord RPC",
+  "description": "Makes Discord playing status only display when in a world/server. Useful for those who keep Minecraft open on the main menu and do not want Discord to display \"Playing Minecraft\" when not actively playing.",
+  "authors": [
+    "LeonTG"
+  ],
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "lol.leontg.iddrpc.Main"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "java": ">=25"
+  }
+}
