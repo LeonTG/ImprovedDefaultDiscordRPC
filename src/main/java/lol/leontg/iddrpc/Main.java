@@ -7,6 +7,8 @@ import dev.firstdark.rpc.handlers.DiscordEventHandler;
 import dev.firstdark.rpc.models.DiscordJoinRequest;
 import dev.firstdark.rpc.models.User;
 
+import lol.leontg.iddrpc.utils.DiscordGameDetector;
+
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -19,12 +21,18 @@ import org.slf4j.LoggerFactory;
  * @author LeonTG
  */
 public class Main implements ClientModInitializer {
-    private static final Logger LOGGER = LoggerFactory.getLogger("ImprovedDefaultDiscordRPC");
+    public static final Logger LOGGER = LoggerFactory.getLogger("ImprovedDefaultDiscordRPC");
 
     private DiscordRpc rpc;
 
     @Override
     public void onInitializeClient() {
+        try {
+            DiscordGameDetector.makeDiscordNotDetectDefaultMinecraftRPC();
+        } catch (Throwable thr) {
+            LOGGER.error("[DiscordRPC] Failed to make Discord not display the default Minecraft Rich Presence", thr);
+        }
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level != null) {
                 if (this.rpc == null) {
