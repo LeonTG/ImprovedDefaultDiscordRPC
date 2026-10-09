@@ -17,12 +17,18 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author LeonTG
  */
 public class Main implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("ImprovedDefaultDiscordRPC");
 
+    private ScheduledFuture<?> timeoutTask = null;
     private DiscordRpc rpc;
 
     @Override
@@ -33,19 +39,37 @@ public class Main implements ClientModInitializer {
             LOGGER.error("[DiscordRPC] Failed to make Discord not display the default Minecraft Rich Presence", thr);
         }
 
+        @SuppressWarnings("resource")
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level != null) {
+                if (this.timeoutTask != null && !this.timeoutTask.isDone()) {
+                    this.timeoutTask.cancel(true);
+                    this.timeoutTask = null;
+                }
+
                 if (this.rpc == null) {
                     this.enableRPC();
                 }
             } else {
-                if (this.rpc != null) {
-                    this.disableRPC();
+                if (this.rpc == null || this.timeoutTask != null) {
+                    return;
                 }
+
+                this.timeoutTask = executor.schedule(() -> {
+                    LOGGER.info("[DiscordRPC] Not been in a world for over 5 minutes, shutting down Discord RPC...");
+
+                    this.disableRPC();
+                    this.timeoutTask = null;
+                }, 5, TimeUnit.MINUTES);
             }
         });
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> this.disableRPC());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> {
+            this.disableRPC();
+            executor.shutdown();
+        });
     }
 
     private void enableRPC() {
