@@ -40,7 +40,12 @@ public class Main implements ClientModInitializer {
         }
 
         @SuppressWarnings("resource")
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, runnable -> {
+            Thread thread = new Thread(runnable, "Discord RPC Timeout Thread");
+            thread.setDaemon(true);
+
+            return thread;
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level != null) {
@@ -68,7 +73,7 @@ public class Main implements ClientModInitializer {
 
         ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> {
             this.disableRPC();
-            executor.shutdown();
+            executor.shutdownNow();
         });
     }
 
